@@ -16,3 +16,6 @@ This app lets you:
 
 Use the tabs in the sidebar to switch between analysis modes.
 
+---
+🔐 Built by [PatchesOHouli] as an all in one tool for data visualization.
+""")
