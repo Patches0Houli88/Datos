@@ -16,6 +16,3 @@ This app lets you:
 
 Use the tabs in the sidebar to switch between analysis modes.
 
----
-🔐 Built by [Yo] to showcase data analysis and engineering skills.
-""")
