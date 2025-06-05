@@ -5,5 +5,5 @@ pyarrow
 plotly
 seaborn
 matplotlib
-ydata-profiling
+ydata-profiling==4.1.2
 streamlit-pandas-profiling
