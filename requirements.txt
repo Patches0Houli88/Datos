@@ -5,5 +5,3 @@ pyarrow
 plotly
 seaborn
 matplotlib
-ydata-profiling
-streamlit-pandas-profiling
