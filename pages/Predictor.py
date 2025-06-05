@@ -11,7 +11,7 @@ import seaborn as sns
 import joblib
 import os
 
-st.title("🤖 Improved Prediction Engine")
+st.title("🤖 Prediction Engine")
 DB_PATH = "universal_data.db"
 MODEL_DIR = "models"
 os.makedirs(MODEL_DIR, exist_ok=True)
