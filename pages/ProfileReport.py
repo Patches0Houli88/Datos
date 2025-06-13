@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from shared_utils import get_connection
 
-st.title("📊 Profile Report")
+st.title("Data Report")
 
 conn = get_connection()
 cursor = conn.cursor()
