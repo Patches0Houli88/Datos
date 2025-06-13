@@ -6,7 +6,7 @@ from shared_utils import get_connection
 st.title("🧮 SQL Query Editor")
 
 # Show current tables for user context
-st.subheader("📊 Available Tables in Database")
+st.subheader("Available Tables in Database")
 conn = get_connection()
 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
 st.dataframe(tables)
