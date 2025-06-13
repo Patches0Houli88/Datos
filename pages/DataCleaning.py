@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 from shared_utils import get_connection
 
-st.title("🧼 Data Cleaner")
+st.title("Data Cleaner")
 
 conn = get_connection()
 cursor = conn.cursor()
