@@ -1,30 +1,33 @@
-# pages/01_DataViewer.py
+# DataViewer.py (Patched for Shared Utils + RowID-Safe)
 import streamlit as st
 import pandas as pd
-import sqlite3
+from shared_utils import get_connection
 
-st.title("📂 Data Viewer & Loader")
-DB_PATH = "universal_data.db"
+st.title("📂 Data Viewer")
 
-uploaded_file = st.file_uploader("Upload a data file (CSV, Excel, JSON, Parquet)", type=["csv", "xlsx", "xls", "json", "parquet"])
+conn = get_connection()
+cursor = conn.cursor()
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+tables = [t[0] for t in cursor.fetchall()]
+conn.close()
 
-if uploaded_file:
-    file_type = uploaded_file.name.split('.')[-1]
-    if file_type in ["xlsx", "xls"]:
-        df = pd.read_excel(uploaded_file)
-    elif file_type == "json":
-        df = pd.read_json(uploaded_file)
-    elif file_type == "parquet":
-        df = pd.read_parquet(uploaded_file)
-    else:
-        df = pd.read_csv(uploaded_file)
+selected_table = st.selectbox("Select table to view", tables if tables else ["No tables found"])
 
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+if selected_table != "No tables found":
+    conn = get_connection()
+    df = pd.read_sql(f"SELECT * FROM {selected_table}", conn)
+    conn.close()
 
-    st.dataframe(df.head())
-    table_name = st.text_input("Enter table name to save in DB", value="my_table")
-    if st.button("📥 Load into SQLite DB"):
-        conn = sqlite3.connect(DB_PATH)
-        df.to_sql(table_name, conn, if_exists="replace", index=False)
-        conn.close()
-        st.success(f"Loaded into `{table_name}` ✅")
+    st.write(f"Total rows: {len(df)}")
+
+    # Safe handling of rowid column
+    filterable_columns = df.columns.drop("rowid") if "rowid" in df.columns else df.columns
+    filter_col = st.selectbox("Filter by column", filterable_columns)
+    filter_val = st.text_input("Contains (optional)")
+    if filter_val:
+        df = df[df[filter_col].astype(str).str.contains(filter_val, na=False, case=False)]
+
+    st.dataframe(df)
+
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button("Download CSV", csv, file_name=f"{selected_table}.csv", mime="text/csv")
