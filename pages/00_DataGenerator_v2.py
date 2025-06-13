@@ -1,13 +1,16 @@
-# Universal Data Generator v2 (Prototype Draft)
+# Universal Data Generator v2 with SQLite Integration
 import streamlit as st
 import pandas as pd
 import numpy as np
 import random
+import sqlite3
 from faker import Faker
 
 fake = Faker()
 
-st.title("🛠 Universal Data Generator v2")
+st.title("Universal Data Generator v2")
+
+DB_PATH = "universal_data.db"
 
 # Function to map type + generator to actual data
 def generate_column_data(data_type, generator, n_rows):
@@ -21,7 +24,7 @@ def generate_column_data(data_type, generator, n_rows):
         elif generator == "company":
             return [fake.company() for _ in range(n_rows)]
         elif generator == "job":
-            return [fake.job() for _ in range(n_rows)]
+            return [fake.job() for _ in range(nå_rows)]
         else:
             return [fake.word() for _ in range(n_rows)]
     elif data_type == "int":
@@ -33,13 +36,12 @@ def generate_column_data(data_type, generator, n_rows):
     elif data_type == "bool":
         return [random.choice([True, False]) for _ in range(n_rows)]
     elif data_type == "category":
-        # Categories will be handled after schema builder is added
         return ["category_placeholder"] * n_rows
     else:
         return [""] * n_rows
 
 # STEP 1 — Column Definitions
-st.header("📋 Define Your Schema")
+st.header("Define Your Schema")
 
 n_rows = st.number_input("Number of Rows", 100, 10000, 100)
 n_cols = st.number_input("Number of Columns", 1, 20, 3)
@@ -70,8 +72,19 @@ if st.button("🚀 Generate Data"):
         df_data[col_name] = generate_column_data(col_type, generator, n_rows)
 
     df = pd.DataFrame(df_data)
-    st.success("✅ Dataset Generated!")
+    st.success("Dataset Generated!")
     st.dataframe(df)
 
+    # CSV Export
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("⬇️ Download CSV", csv, file_name="generated_data.csv", mime="text/csv")
+
+    # NEW: Save directly to SQLite
+    st.subheader("💾 Save to Universal Analyzer Database")
+    db_table_name = st.text_input("Enter SQLite Table Name")
+
+    if st.button("Save to SQLite"):
+        conn = sqlite3.connect(DB_PATH)
+        df.to_sql(db_table_name, conn, if_exists="replace", index=False)
+        conn.close()
+        st.success(f"Saved as '{db_table_name}' in {DB_PATH} ")
