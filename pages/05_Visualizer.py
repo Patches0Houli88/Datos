@@ -4,14 +4,14 @@ import numpy as np
 import plotly.express as px
 from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block, render_kpi_cards
+from filter_utils import apply_universal_filters
 
-render_page_header("Dashboard Visualizer PRO", "📊 Build full dashboards for any dataset")
+render_page_header("Dashboard Visualizer PRO", "Build dashboards with unified filters")
 
 render_instructions_block("""
-- Select any table to build your dashboard.
-- Apply filters and generate KPI metrics automatically.
-- Create multiple charts for players, positions, teams, and fantasy points.
-- Fully compatible with saved Search + Explorer tables.
+- Apply universal filters: Season, Player, Position.
+- Auto-generates KPI cards and key charts.
+- Fully powered by fantasy_points_ppr.
 """)
 
 # Load tables
@@ -29,51 +29,29 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("Apply Filters")
-    filtered_df = df.copy()
+    st.header("🔎 Apply Universal Filters")
+    filtered_df = apply_universal_filters(df)
+    st.dataframe(filtered_df)
 
-    if "season" in df.columns:
-        seasons = sorted(df["season"].dropna().unique())
-        season_range = st.slider("Season Range", min(seasons), max(seasons), (min(seasons), max(seasons)))
-        filtered_df = filtered_df[filtered_df["season"].between(*season_range)]
+    st.header("KPI Summary")
 
-    if "week" in df.columns:
-        weeks = sorted(df["week"].dropna().unique())
-        week_range = st.slider("Week Range", min(weeks), max(weeks), (min(weeks), max(weeks)))
-        filtered_df = filtered_df[filtered_df["week"].between(*week_range)]
-
-    if "position" in df.columns:
-        positions = sorted(df["position"].dropna().unique())
-        selected_positions = st.multiselect("Position", positions, default=positions)
-        filtered_df = filtered_df[filtered_df["position"].isin(selected_positions)]
-
-    if "player_name" in df.columns:
-        player_search = st.text_input("Search by Player Name")
-        if player_search:
-            filtered_df = filtered_df[filtered_df["player_name"].str.contains(player_search, case=False, na=False)]
-
-    st.write(f"Filtered rows: {len(filtered_df)}")
-
-    st.header("Fantasy KPI Summary")
-
-    # Auto Fantasy KPIs
-    total_pts = round(filtered_df.get("fantasy_points", pd.Series()).sum(), 2)
-    avg_ppg = round(filtered_df.get("fantasy_points", pd.Series()).mean(), 2)
+    total_pts = round(filtered_df.get("fantasy_points_ppr", pd.Series()).sum(), 2)
+    avg_ppg = round(filtered_df.get("fantasy_points_ppr", pd.Series()).mean(), 2)
     unique_players = filtered_df.get("player_name", pd.Series()).nunique()
 
     render_kpi_cards([
-        ("Total Fantasy Points", total_pts, None),
+        ("Total Fantasy Points (PPR)", total_pts, None),
         ("Avg Points Per Game", avg_ppg, None),
         ("Unique Players", unique_players, None),
     ])
 
     st.header("Visualizations")
 
-    # Player Distribution Chart
+    # Top Players by PPR
     if "player_name" in filtered_df.columns:
-        player_summary = filtered_df.groupby("player_name")["fantasy_points"].sum().reset_index()
-        player_summary = player_summary.sort_values(by="fantasy_points", ascending=False).head(20)
-        fig1 = px.bar(player_summary, x="player_name", y="fantasy_points", title="Top Players by Fantasy Points")
+        player_summary = filtered_df.groupby("player_name")["fantasy_points_ppr"].sum().reset_index()
+        player_summary = player_summary.sort_values(by="fantasy_points_ppr", ascending=False).head(20)
+        fig1 = px.bar(player_summary, x="player_name", y="fantasy_points_ppr", title="Top Players (PPR Total)")
         st.plotly_chart(fig1, use_container_width=True)
 
     # Position Breakdown Pie
@@ -84,7 +62,7 @@ if selected_table != "No tables found":
         st.plotly_chart(fig2, use_container_width=True)
 
     # Weekly Fantasy Trend
-    if "week" in filtered_df.columns and "fantasy_points" in filtered_df.columns:
-        weekly = filtered_df.groupby("week")["fantasy_points"].sum().reset_index()
-        fig3 = px.line(weekly, x="week", y="fantasy_points", markers=True, title="Weekly Total Fantasy Points")
+    if "week" in filtered_df.columns and "fantasy_points_ppr" in filtered_df.columns:
+        weekly = filtered_df.groupby("week")["fantasy_points_ppr"].sum().reset_index()
+        fig3 = px.line(weekly, x="week", y="fantasy_points_ppr", markers=True, title="Weekly Total Fantasy Points (PPR)")
         st.plotly_chart(fig3, use_container_width=True)
