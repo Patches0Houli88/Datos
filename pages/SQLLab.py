@@ -1,9 +1,8 @@
-# SQLQueryEditor.py (Patched for Shared Utils + Table List View)
 import streamlit as st
 import pandas as pd
 from shared_utils import get_connection
 
-st.title("🧮 SQL Query Editor")
+st.title("SQL Query Editor")
 
 # Show current tables for user context
 st.subheader("Available Tables in Database")
