@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
+from filter_utils import apply_universal_filters
 
-render_page_header("Data Cleaner PRO", "🧹 Simplify your datasets before modeling")
+render_page_header("Data Cleaner PRO v3", "🧹 Filter + Clean your fantasy datasets")
 
 render_instructions_block("""
-- Drop missing rows entirely if desired.
-- Detect & remove outliers automatically (z-score based).
-- Save cleaned versions for modeling & visualization.
+- Apply player/season/position filters first.
+- Then apply missing value dropping and outlier removal.
+- Save cleaned dataset for modeling or visualization.
 """)
 
 # Load tables
@@ -27,11 +28,15 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    df_clean = df.copy()
+    st.header("🔎 Apply Universal Filters")
+    df_filtered = apply_universal_filters(df)
+    st.dataframe(df_filtered)
 
     st.header("Cleaning Options")
     drop_na = st.checkbox("Drop rows with missing values?")
     remove_outliers = st.checkbox("Remove numeric outliers? (Z-score > 3)")
+
+    df_clean = df_filtered.copy()
 
     if drop_na:
         df_clean = df_clean.dropna()
@@ -42,7 +47,7 @@ if selected_table != "No tables found":
             z_scores = np.abs((df_clean[col] - df_clean[col].mean()) / df_clean[col].std())
             df_clean = df_clean[z_scores < 3]
 
-    st.write(f"Remaining rows after cleaning: {len(df_clean)}")
+    st.write(f"Remaining rows after full cleaning: {len(df_clean)}")
     st.dataframe(df_clean)
 
     new_table_name = st.text_input("Save cleaned table as:")
