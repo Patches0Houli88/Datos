@@ -13,22 +13,19 @@ from sklearn.ensemble import RandomForestRegressor
 
 from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
+from filter_utils import apply_universal_filters
 
-render_page_header("Prediction Engine PRO", "🔮 Build your own custom prediction model")
+render_page_header("Prediction Engine PRO v3", "🔮 Build fantasy point forecasts with unified filters")
 
 render_instructions_block("""
-**Workflow:**
-1️⃣ Select a table that includes historical fantasy data  
-2️⃣ Choose your prediction target (usually `fantasy_points`)  
-3️⃣ Select the features you believe influence the target (passing_yards, carries, receptions, etc)  
-4️⃣ Train model to estimate fantasy performance in future games  
-5️⃣ Export model and use predictions for weekly forecasting
+- Apply filters to limit dataset scope (Season, Player, Position)
+- Select model features and predict `fantasy_points_ppr`
+- Train Random Forest regression models for forecasting weekly performance
 """)
 
-# Setup model save path
 os.makedirs("models", exist_ok=True)
 
-# Load available tables
+# Load tables
 conn = get_connection()
 tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
 conn.close()
@@ -43,13 +40,18 @@ if selected_table != "No tables found":
     st.write("Sample of selected data:")
     st.dataframe(df.head())
 
-    numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    st.header("🔎 Apply Universal Filters")
+    filtered_df = apply_universal_filters(df)
+    st.dataframe(filtered_df)
+
+    numeric_cols = filtered_df.select_dtypes(include=["number"]).columns.tolist()
+
     feature_cols = st.multiselect("Select input features (X)", numeric_cols)
-    target_col = st.selectbox("Select target column (y)", numeric_cols, index=numeric_cols.index("fantasy_points") if "fantasy_points" in numeric_cols else 0)
+    target_col = st.selectbox("Target column (y)", numeric_cols, index=numeric_cols.index("fantasy_points_ppr") if "fantasy_points_ppr" in numeric_cols else 0)
 
     if feature_cols and target_col:
-        X = df[feature_cols].fillna(0)
-        y = df[target_col].fillna(0)
+        X = filtered_df[feature_cols].fillna(0)
+        y = filtered_df[target_col].fillna(0)
 
         test_size = st.slider("Test Set Size (%)", 10, 40, 20, step=5)
         n_estimators = st.slider("Random Forest: n_estimators", 50, 500, 200, 50)
@@ -67,12 +69,10 @@ if selected_table != "No tables found":
 
             st.success(f"✅ Model Trained!  RMSE: {rmse:.2f}  |  R²: {r2:.2%}")
 
-            # Save model
             model_file = f"models/{selected_table}_fantasy_predictor.pkl"
             joblib.dump((model, feature_cols, target_col), model_file)
             st.info(f"Model saved as {model_file}")
 
-            # Plot prediction scatter
             fig, ax = plt.subplots()
             sns.scatterplot(x=y_test, y=preds, ax=ax)
             ax.plot([y.min(), y.max()], [y.min(), y.max()], '--', color='gray')
@@ -80,6 +80,5 @@ if selected_table != "No tables found":
             ax.set_ylabel("Predicted")
             st.pyplot(fig)
 
-            # Download predictions
             pred_df = pd.DataFrame({"Actual": y_test, "Predicted": preds})
             st.download_button("📥 Download Predictions", pred_df.to_csv(index=False), file_name="predictions.csv")
