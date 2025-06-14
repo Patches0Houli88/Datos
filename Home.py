@@ -1,48 +1,49 @@
-# Home.py
+# Home.py (Patched: Add Universal Importer Inline)
 import streamlit as st
+import pandas as pd
+import sqlite3
+import os
+from shared_utils import get_connection
 
 st.set_page_config(page_title="Universal Data Analyzer", layout="wide")
-st.title("Universal Data Analyzer")
+st.title("Universal Data Analyzer — Home")
 
-st.markdown("""
-Welcome to your all-in-one data analysis tool!
+# --- Universal Data Import Section ---
+st.header("Import Your Own Dataset")
 
-This app lets you:
-- 📂 Upload data (CSV, Excel, JSON, Parquet)
-- 🗃️ Store it in a local SQLite database
-- 📊 Explore, filter, group, and visualize your data
-- 🔍 Profile datasets to understand quality and stats
-- 🧠 Write and run SQL queries directly
+uploaded_file = st.file_uploader("Upload CSV, Excel, JSON, or Parquet", type=["csv", "xlsx", "json", "parquet"])
+table_name = st.text_input("Enter table name to save in database")
 
-Use the tabs in the sidebar to switch between analysis modes.
+if uploaded_file and table_name:
+    try:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+        elif uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(uploaded_file)
+        elif uploaded_file.name.endswith(".json"):
+            df = pd.read_json(uploaded_file)
+        elif uploaded_file.name.endswith(".parquet"):
+            df = pd.read_parquet(uploaded_file)
+        else:
+            st.error("Unsupported file type.")
+            df = None
 
----
-🔐 Built by [PatchesOHouli] as an all-in-one tool for data visualization.
-""")
+        if df is not None:
+            st.dataframe(df.head())
+            if st.button("💾 Save to SQLite"):
+                conn = get_connection()
+                df.to_sql(table_name, conn, if_exists="replace", index=False)
+                conn.close()
+                st.success(f"✅ Saved table '{table_name}' to database.")
 
-with st.sidebar.expander("How To Use This App"):
-    st.markdown("""
-### 1. Launch
-- Run `streamlit run Home.py` locally or use Streamlit Cloud
+    except Exception as e:
+        st.error(f"Upload failed: {e}")
 
-### 2. Upload
-- Upload CSV, Excel, JSON, or Parquet via **Data Viewer**
-- Save data to SQLite database
+st.divider()
 
-### 3. Clean
-- Use **Data Cleaner** tab to fix missing values, types, etc.
-
-### 4. Profile
-- View summary stats and correlation in **Profile Report**
-
-### 5. Explore
-- Filter, group, and chart using **Data Explorer**
-
-### 6. Predict
-- Use **Prediction Engine**:
-  - Select features + target
-  - Tune model (trees/depth)
-  - Compare RF vs Logistic
-  - Predict and download results
-    """)
-
+# --- Current Tables Preview ---
+st.header("Current Tables in Database")
+conn = get_connection()
+tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
+conn.close()
+st.dataframe(tables)
