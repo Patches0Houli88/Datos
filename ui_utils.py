@@ -1,7 +1,7 @@
 import streamlit as st
 
 # Set global Streamlit config early for all pages
-st.set_page_config(page_title="Universal Analyzer 3.0 PRO", layout="wide")
+st.set_page_config(page_title="Datos 3.0 PRO", layout="wide")
 
 # ------------------------
 # Global Color Theme
