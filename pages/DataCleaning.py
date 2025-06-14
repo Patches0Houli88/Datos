@@ -1,7 +1,6 @@
-# DataCleaner.py (Patched for Shared Utils)
 import streamlit as st
 import pandas as pd
-from shared_utils import get_connection
+from shared_utils import get_connection, quote_table
 
 st.title("Data Cleaner")
 
@@ -15,7 +14,7 @@ selected_table = st.selectbox("Select table to clean", tables if tables else ["N
 
 if selected_table != "No tables found":
     conn = get_connection()
-    df = pd.read_sql(f"SELECT * FROM {selected_table}", conn)
+    df = pd.read_sql(f"SELECT * FROM {quote_table(selected_table)}", conn)
     conn.close()
 
     st.write(f"Total rows: {len(df)}")
