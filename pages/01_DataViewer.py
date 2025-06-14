@@ -1,7 +1,6 @@
-# DataViewer.py (Patched for Shared Utils + RowID-Safe)
 import streamlit as st
 import pandas as pd
-from shared_utils import get_connection
+from shared_utils import get_connection, quote_table
 
 st.title("Data Viewer")
 
@@ -15,12 +14,11 @@ selected_table = st.selectbox("Select table to view", tables if tables else ["No
 
 if selected_table != "No tables found":
     conn = get_connection()
-    df = pd.read_sql(f"SELECT * FROM {selected_table}", conn)
+    df = pd.read_sql(f"SELECT * FROM {quote_table(selected_table)}", conn)
     conn.close()
 
     st.write(f"Total rows: {len(df)}")
 
-    # Safe handling of rowid column
     filterable_columns = df.columns.drop("rowid") if "rowid" in df.columns else df.columns
     filter_col = st.selectbox("Filter by column", filterable_columns)
     filter_val = st.text_input("Contains (optional)")
