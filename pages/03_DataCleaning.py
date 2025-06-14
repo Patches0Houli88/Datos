@@ -1,16 +1,23 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from shared_utils import get_connection, quote_table
+from ui_utils import render_page_header, render_instructions_block
 
-st.title("Data Cleaner")
+render_page_header("Data Cleaner PRO", "🧹 Simplify your datasets before modeling")
 
+render_instructions_block("""
+- Drop missing rows entirely if desired.
+- Detect & remove outliers automatically (z-score based).
+- Save cleaned versions for modeling & visualization.
+""")
+
+# Load tables
 conn = get_connection()
-cursor = conn.cursor()
-cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-tables = [t[0] for t in cursor.fetchall()]
+tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
 conn.close()
 
-selected_table = st.selectbox("Select table to clean", tables if tables else ["No tables found"])
+selected_table = st.selectbox("Select table to clean", tables["name"].tolist() if not tables.empty else ["No tables found"])
 
 if selected_table != "No tables found":
     conn = get_connection()
@@ -20,28 +27,30 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.subheader("Cleaning Options")
+    df_clean = df.copy()
 
-    if st.checkbox("Drop rows with missing values"):
-        df.dropna(inplace=True)
+    st.header("Cleaning Options")
+    drop_na = st.checkbox("Drop rows with missing values?")
+    remove_outliers = st.checkbox("Remove numeric outliers? (Z-score > 3)")
 
-    numeric_cols = df.select_dtypes(include="number").columns.tolist()
-    if numeric_cols:
-        st.write("Numeric columns: ", numeric_cols)
+    if drop_na:
+        df_clean = df_clean.dropna()
+
+    if remove_outliers:
+        numeric_cols = df_clean.select_dtypes(include=["number"]).columns
         for col in numeric_cols:
-            outlier_thresh = st.slider(f"Remove outliers in {col}", 0.0, 5.0, 3.0, 0.5)
-            zscore = (df[col] - df[col].mean()) / df[col].std()
-            df = df[abs(zscore) < outlier_thresh]
+            z_scores = np.abs((df_clean[col] - df_clean[col].mean()) / df_clean[col].std())
+            df_clean = df_clean[z_scores < 3]
 
-    st.write(f"Cleaned data shape: {df.shape}")
-    st.dataframe(df)
+    st.write(f"Remaining rows after cleaning: {len(df_clean)}")
+    st.dataframe(df_clean)
 
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button("Download Cleaned CSV", csv, file_name=f"{selected_table}_cleaned.csv", mime="text/csv")
-
-    if st.button("Save Cleaned Table"):
-        conn = get_connection()
-        new_table = selected_table + "_cleaned"
-        df.to_sql(new_table, conn, if_exists="replace", index=False)
-        conn.close()
-        st.success(f"Saved cleaned table as '{new_table}' in database.")
+    new_table_name = st.text_input("Save cleaned table as:")
+    if st.button("💾 Save Cleaned Table"):
+        if new_table_name:
+            conn = get_connection()
+            df_clean.to_sql(new_table_name, conn, if_exists="replace", index=False)
+            conn.close()
+            st.success(f"✅ Cleaned table saved as '{new_table_name}'")
+        else:
+            st.warning("Enter table name before saving.")
