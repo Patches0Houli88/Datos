@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
+from filter_utils import apply_universal_filters
 
-render_page_header("Search Builder PRO", " Subset any dataset into fantasy-ready tables")
+render_page_header("Search Builder PRO v3", "🔎 Filter & subset fantasy data with unified controls")
 
 render_instructions_block("""
-- Use this page to filter by season, week, position, player, or fantasy stats.
-- Save any search subset as a new table for modeling or visualization.
-- Fully supports iterative table building.
+- Apply filters across Season, Player, and Position.
+- Target column aligned to fantasy_points_ppr.
+- Subset and save filtered datasets for downstream analysis.
 """)
 
 # Load tables
@@ -27,45 +28,24 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    filtered_df = df.copy()
-
-    st.header("Apply Filters")
-
-    if "season" in df.columns:
-        seasons = sorted(df["season"].dropna().unique())
-        season_range = st.slider("Season Range", min(seasons), max(seasons), (min(seasons), max(seasons)))
-        filtered_df = filtered_df[filtered_df["season"].between(*season_range)]
-
-    if "week" in df.columns:
-        weeks = sorted(df["week"].dropna().unique())
-        week_range = st.slider("Week Range", min(weeks), max(weeks), (min(weeks), max(weeks)))
-        filtered_df = filtered_df[filtered_df["week"].between(*week_range)]
-
-    if "position" in df.columns:
-        positions = sorted(df["position"].dropna().unique())
-        selected_positions = st.multiselect("Position", positions, default=positions)
-        filtered_df = filtered_df[filtered_df["position"].isin(selected_positions)]
-
-    if "player_name" in df.columns:
-        player_search = st.text_input("Search by Player Name")
-        if player_search:
-            filtered_df = filtered_df[filtered_df["player_name"].str.contains(player_search, case=False, na=False)]
-
-    if "fantasy_points" in df.columns:
-        min_fp = float(df["fantasy_points"].min())
-        max_fp = float(df["fantasy_points"].max())
-        fantasy_range = st.slider("Fantasy Points Range", min_fp, max_fp, (min_fp, max_fp))
-        filtered_df = filtered_df[filtered_df["fantasy_points"].between(*fantasy_range)]
-
-    st.write(f"Filtered rows: {len(filtered_df)}")
+    st.header("Apply Universal Filters")
+    filtered_df = apply_universal_filters(df)
     st.dataframe(filtered_df)
 
-    new_table_name = st.text_input("Save search result as new table")
-    if st.button("💾 Save Search Table"):
+    # Optional: add fantasy_points_ppr range slider
+    if "fantasy_points_ppr" in filtered_df.columns:
+        min_fp = float(filtered_df["fantasy_points_ppr"].min())
+        max_fp = float(filtered_df["fantasy_points_ppr"].max())
+        fp_range = st.slider("Fantasy PPR Points Range", min_fp, max_fp, (min_fp, max_fp))
+        filtered_df = filtered_df[filtered_df["fantasy_points_ppr"].between(*fp_range)]
+        st.write(f"Rows after PPR filter: {len(filtered_df)}")
+
+    new_table_name = st.text_input("Save filtered result as new table")
+    if st.button("💾 Save Filtered Table"):
         if new_table_name:
             conn = get_connection()
             filtered_df.to_sql(new_table_name, conn, if_exists="replace", index=False)
             conn.close()
-            st.success(f"✅ Search result saved as '{new_table_name}'.")
+            st.success(f"✅ Filtered table saved as '{new_table_name}'")
         else:
-            st.warning("Please enter a table name to save.")
+            st.warning("Please enter a table name before saving.")
