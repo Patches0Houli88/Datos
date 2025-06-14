@@ -4,13 +4,14 @@ import numpy as np
 import plotly.express as px
 from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
+from filter_utils import apply_universal_filters
 
-render_page_header("Data Explorer PRO", "Group, aggregate & visualize any table")
+render_page_header("Data Explorer PRO v3", "Explore, aggregate & visualize fantasy datasets")
 
 render_instructions_block("""
-- Select any table to explore.
-- Apply filters, group by dimensions, aggregate numeric metrics.
-- Build charts and optionally save derived tables.
+- Apply player/season/position filters first.
+- Group & aggregate on any field.
+- Visualize results and optionally save grouped tables.
 """)
 
 # Load tables
@@ -28,46 +29,30 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("Apply Filters")
-    filtered_df = df.copy()
+    st.header("🔎 Apply Universal Filters")
+    df_filtered = apply_universal_filters(df)
+    st.dataframe(df_filtered)
 
-    # Core filters for NFL datasets
-    if "season" in df.columns:
-        seasons = sorted(df["season"].dropna().unique())
-        season_range = st.slider("Season Range", min(seasons), max(seasons), (min(seasons), max(seasons)))
-        filtered_df = filtered_df[filtered_df["season"].between(*season_range)]
-
-    if "week" in df.columns:
-        weeks = sorted(df["week"].dropna().unique())
-        week_range = st.slider("Week Range", min(weeks), max(weeks), (min(weeks), max(weeks)))
-        filtered_df = filtered_df[filtered_df["week"].between(*week_range)]
-
-    if "position" in df.columns:
-        positions = sorted(df["position"].dropna().unique())
-        selected_positions = st.multiselect("Position", positions, default=positions)
-        filtered_df = filtered_df[filtered_df["position"].isin(selected_positions)]
-
-    if "player_name" in df.columns:
-        player_search = st.text_input("Search by Player Name")
-        if player_search:
-            filtered_df = filtered_df[filtered_df["player_name"].str.contains(player_search, case=False, na=False)]
-
-    st.write(f"Filtered rows: {len(filtered_df)}")
-    st.dataframe(filtered_df)
-
-    st.header("Group & Aggregate")
-    group_cols = [col for col in filtered_df.columns if filtered_df[col].nunique() < 100]
+    st.header("📊 Group & Aggregate")
+    group_cols = [col for col in df_filtered.columns if df_filtered[col].nunique() < 100]
 
     if group_cols:
         group_col = st.selectbox("Group by column", group_cols)
-        numeric_cols = filtered_df.select_dtypes(include=["number"]).columns.tolist()
-        agg_col = st.selectbox("Aggregate numeric column", numeric_cols)
+        numeric_cols = df_filtered.select_dtypes(include=["number"]).columns.tolist()
+
+        # Default to fantasy_points_ppr
+        if "fantasy_points_ppr" in numeric_cols:
+            default_idx = numeric_cols.index("fantasy_points_ppr")
+        else:
+            default_idx = 0
+
+        agg_col = st.selectbox("Aggregate numeric column", numeric_cols, index=default_idx)
         agg_func = st.selectbox("Aggregation function", ["sum", "mean", "max", "min", "count"])
 
-        grouped = filtered_df.groupby(group_col)[agg_col].agg(agg_func).reset_index()
+        grouped = df_filtered.groupby(group_col)[agg_col].agg(agg_func).reset_index()
         st.write(grouped)
 
-        st.header("Chart Builder")
+        st.header("📈 Chart Builder")
         chart_type = st.selectbox("Chart Type", ["Bar", "Line", "Pie"])
         if chart_type == "Bar":
             fig = px.bar(grouped, x=group_col, y=agg_col)
@@ -78,7 +63,6 @@ if selected_table != "No tables found":
 
         st.plotly_chart(fig, use_container_width=True)
 
-        # Save aggregated result
         new_table_name = st.text_input("Save Aggregated Table")
         if st.button("💾 Save Aggregated Table"):
             if new_table_name:
