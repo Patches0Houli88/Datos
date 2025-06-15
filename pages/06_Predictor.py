@@ -64,7 +64,7 @@ if selected_table != "No tables found":
             model.fit(X_train, y_train)
 
             preds = model.predict(X_test)
-            rmse = mean_squared_error(y_test, preds, squared=False)
+            rmse = mean_squared_error(y_test, preds) ** 0.5
             r2 = r2_score(y_test, preds)
 
             st.success(f"✅ Model Trained!  RMSE: {rmse:.2f}  |  R²: {r2:.2%}")
