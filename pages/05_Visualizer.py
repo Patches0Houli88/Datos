@@ -6,7 +6,7 @@ from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block, render_kpi_cards
 from filter_utils import apply_universal_filters
 
-render_page_header("Dashboard Visualizer PRO", "Build dashboards with unified filters")
+render_page_header("Dashboard Visualizer PRO v4", "Build dashboards with unified filters")
 
 render_instructions_block("""
 - Apply universal filters: Season, Player, Position.
@@ -29,7 +29,7 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("🔎 Apply Universal Filters")
+    st.header("Apply Filters")
     filtered_df = apply_universal_filters(df)
     st.dataframe(filtered_df)
 
