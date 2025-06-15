@@ -8,7 +8,7 @@ st.set_page_config(page_title="Universal Analyzer 4.0 PRO SaaS", layout="wide")
 st.title("Datos 4.0 PRO")
 
 st.markdown("""
-Welcome to your fully SaaS-grade, production-ready Analytics Engine!
+Welcome to your fully SaaS-grade, production-ready Fantasy Analytics Engine!
 
 This app includes:
 
@@ -27,7 +27,7 @@ This app includes:
 if not os.path.exists("models"):
     os.makedirs("models")
 
-# 🚀 ✅ New Upload Section:
+# 🚀 ✅ CSV Upload Section:
 st.header("📂 Upload CSV Data Into SQLite")
 
 uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
@@ -37,7 +37,7 @@ if uploaded_file:
     st.write("Preview of uploaded data:")
     st.dataframe(df.head())
 
-    table_name = st.text_input("Enter table name to save into database (e.g. player_stats):")
+    table_name = st.text_input("Enter table name to save into database (e.g. player_stats, injuries, weather):")
 
     if st.button("💾 Save to Database"):
         if table_name:
