@@ -5,7 +5,7 @@ from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
 from filter_utils import apply_universal_filters
 
-render_page_header("Data Cleaner PRO v3", "🧹 Filter + Clean your fantasy datasets")
+render_page_header("Data Cleaner PRO v4", "🧹 Filter + Clean your fantasy datasets")
 
 render_instructions_block("""
 - Apply player/season/position filters first.
@@ -28,7 +28,7 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("🔎 Apply Universal Filters")
+    st.header("Apply Universal Filters")
     df_filtered = apply_universal_filters(df)
     st.dataframe(df_filtered)
 
