@@ -29,11 +29,11 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("🔎 Apply Universal Filters")
+    st.header("Apply Filters")
     df_filtered = apply_universal_filters(df)
     st.dataframe(df_filtered)
 
-    st.header("📊 Group & Aggregate")
+    st.header("Group & Aggregate")
     group_cols = [col for col in df_filtered.columns if df_filtered[col].nunique() < 100]
 
     if group_cols:
