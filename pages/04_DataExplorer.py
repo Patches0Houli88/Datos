@@ -6,7 +6,7 @@ from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
 from filter_utils import apply_universal_filters
 
-render_page_header("Data Explorer PRO v3", "Explore, aggregate & visualize fantasy datasets")
+render_page_header("Data Explorer PRO v4", "Explore, aggregate & visualize datasets")
 
 render_instructions_block("""
 - Apply player/season/position filters first.
