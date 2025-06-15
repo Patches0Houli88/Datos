@@ -1,23 +1,16 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from shared_utils import get_connection, quote_table
-from ui_utils import render_page_header, render_instructions_block
 
-render_page_header("Profile Report PRO", "Quick profiling for datasets")
+st.title("Profile Report")
 
-render_instructions_block("""
-- View column types, missing data %, basic stats & uniqueness.
-- Helps you quickly audit any dataset before building models.
-- Fully compatible with Fantasy filtered tables.
-""")
-
-# Load tables
 conn = get_connection()
-tables = pd.read_sql("SELECT name FROM sqlite_master WHERE type='table'", conn)
+cursor = conn.cursor()
+cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+tables = [t[0] for t in cursor.fetchall()]
 conn.close()
 
-selected_table = st.selectbox("Select table to profile", tables["name"].tolist() if not tables.empty else ["No tables found"])
+selected_table = st.selectbox("Select table to profile", tables if tables else ["No tables found"])
 
 if selected_table != "No tables found":
     conn = get_connection()
@@ -27,18 +20,14 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("Column Summary")
-    summary = pd.DataFrame({
-        "Data Type": df.dtypes,
-        "Missing %": df.isnull().mean() * 100,
-        "Unique Values": df.nunique(),
-    })
+    st.subheader("Summary Statistics")
+    st.write(df.describe(include="all"))
 
-    st.dataframe(summary)
+    st.subheader("Missing Values")
+    st.write(df.isnull().sum())
 
-    st.header("Descriptive Statistics")
-    st.dataframe(df.describe().T)
+    st.subheader("Column Data Types")
+    st.write(df.dtypes)
 
-    st.header("📥 Export Profile Report")
-    profile_csv = summary.to_csv(index=True).encode("utf-8")
-    st.download_button("Download Profile Summary CSV", profile_csv, file_name="profile_summary.csv")
+    csv = df.describe(include="all").to_csv().encode("utf-8")
+    st.download_button("Download Summary CSV", csv, file_name=f"{selected_table}_summary.csv", mime="text/csv")
