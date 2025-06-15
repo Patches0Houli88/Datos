@@ -5,7 +5,7 @@ from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
 from filter_utils import apply_universal_filters
 
-render_page_header("Search Builder PRO v3", "🔎 Filter & subset fantasy data with unified controls")
+render_page_header("Search Builder PRO v4", "🔎 Filter & subset fantasy data with unified controls")
 
 render_instructions_block("""
 - Apply filters across Season, Player, and Position.
@@ -28,7 +28,7 @@ if selected_table != "No tables found":
     st.write(f"Total rows: {len(df)}")
     st.dataframe(df.head())
 
-    st.header("Apply Universal Filters")
+    st.header("⚙️ Apply Universal Filters")
     filtered_df = apply_universal_filters(df)
     st.dataframe(filtered_df)
 
