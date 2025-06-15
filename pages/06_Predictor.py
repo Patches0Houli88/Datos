@@ -15,7 +15,7 @@ from shared_utils import get_connection, quote_table
 from ui_utils import render_page_header, render_instructions_block
 from filter_utils import apply_universal_filters
 
-render_page_header("Prediction Engine PRO v3", "🔮 Build fantasy point forecasts with unified filters")
+render_page_header("Prediction Engine PRO v4", "🔮 Build forecasts with unified filters")
 
 render_instructions_block("""
 - Apply filters to limit dataset scope (Season, Player, Position)
@@ -40,7 +40,7 @@ if selected_table != "No tables found":
     st.write("Sample of selected data:")
     st.dataframe(df.head())
 
-    st.header("🔎 Apply Universal Filters")
+    st.header("Apply Filters")
     filtered_df = apply_universal_filters(df)
     st.dataframe(filtered_df)
 
