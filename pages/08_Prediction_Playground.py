@@ -45,9 +45,9 @@ if loaded_model:
     feature_file = st.file_uploader("Upload CSV containing future features", type=["csv"])
 
     if feature_file:
-    future_df = pd.read_csv(feature_file)
-    st.write("Preview of future feature data:")
-    st.dataframe(future_df.head())
+        future_df = pd.read_csv(feature_file)
+        st.write("Preview of future feature data:")
+        st.dataframe(future_df.head())
 
     # Determine expected features
     expected = None
